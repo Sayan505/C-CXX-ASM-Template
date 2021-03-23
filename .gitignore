@@ -1,0 +1,5 @@
+# files
+*.o
+
+# dirs
+build/
