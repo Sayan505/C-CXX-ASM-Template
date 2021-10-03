@@ -1,184 +1,145 @@
-# make         : build in release mode in $(RELEASEDIR).
-# make release : build in release mode in $(RELEASEDIR).
-# make debug   : build in debug mode in $(DEBUGDIR).
-# make run     : run debug build.
-# make gdb     : run debug build under gdb.
-# make CI      : build in debug mode in $(DEBUGDIR) for CI.
-# make clean   : clean up along with $(BUILDDIR).
+# make release  : generate a release build
+# make debug    : generate a debug build
 
-# make run_release : run release build.
+
 
 
 # toolchain:
-CC  = gcc
-CXX = g++
-AS  = nasm
-DBG = gdb
+CXX := g++
+AS  := nasm
+LD  := g++
 
-# COMPILER (change here):
-COMPILER = $(CC)
-LINKER   = $(COMPILER)
 
-# c/c++ release optimization level:
-OPT   = 2
+# opt levels:
+OPT_DBG := 0
+OPT_REL := 2
 
-# outputs:
-BIN = template.elf64
+
+# output:
+BIN := Program.elf64
 
 # output dirs:
-BUILDDIR   := build
-RELEASEDIR  = $(BUILDDIR)/release
-DEBUGDIR    = $(BUILDDIR)/debug
+BUILDDIR            := build
+BUILDDIR_RELEASEDIR := $(BUILDDIR)/release
+BUILDDIR_DEBUGDIR   := $(BUILDDIR)/debug
 
-OUTDIR    := $(RELEASEDIR)
 
 # srcs:
-SRCDIR   = src
-C_SRC   := $(shell find ./$(SRCDIR)/ -type f -name '*.c')
-CPP_SRC := $(shell find ./$(SRCDIR)/ -type f -name '*.cpp')
-ASM_SRC := $(shell find ./$(SRCDIR)/ -type f -name '*.asm')
-#CPP_SRC := $(shell find ./$(SRCDIR)/ -type d \( -path ./excludedir1 -o -path ./excludedir2 -o -path ./excludedir3 \) -prune -false -o -name '*.cpp')
+SRCDIR := ./src
+SRC_CPP    := $(shell find $(SRCDIR)/ -type d \( -path ./tests \) -prune -false -o -name '*.cpp')
+SRC_ASM    := $(shell find $(SRCDIR)/ -type d \( -path ./tests \) -prune -false -o -name '*.asm')
+
 
 # objs:
-OBJ := ${C_SRC:.c=.o} ${ASM_SRC:.asm=.o} ${CPP_SRC:.asm=.o}
+OBJS := ${SRC_CPP:.cpp=.o} ${SRC_ASM:.asm=.o}
 
 
 # toolchain flags:
-CFLAGS := -O$(OPT)					\
-		  -m64						\
-		  -std=c17					\
-		  -Wall						\
-		  -Wextra					\
-		  -pedantic-errors			\
-		  -pipe						\
-		  -Isrc/inc
+CXXFLAGS_DEBUG   := -O$(OPT_DBG)             \
+                    -std=c++20               \
+                    -Wall                    \
+                    -Wextra                  \
+                    -Wpadded                 \
+					-pedantic                \
+                    -pedantic-errors         \
+                    -pipe                    \
+                    -g3                      \
+                    -fno-pic                 \
+                    -I$(SRCDIR)/inc
 
-CDEBUGFLAGS := -g					\
-			   -O0					\
-			   -m64					\
-			   -std=c17				\
-			   -Wall				\
-			   -Wextra				\
-			   -pedantic-errors		\
-			   -pipe				\
-			   -Isrc/inc
+CXXFLAGS_RELEASE := -O$(OPT_REL)             \
+                    -std=c++20               \
+                    -Wall                    \
+                    -Wextra                  \
+					-pedantic                \
+                    -pedantic-errors         \
+                    -pipe                    \
+                    -fno-pic                 \
+                    -I$(SRCDIR)/inc
 
-CXXFLAGS := -O$(OPT)				\
-			-m64					\
-		    -std=c++20				\
-		    -Weffc++				\
-		    -Wall					\
-		    -Wextra					\
-		    -pedantic-errors		\
-		    -pipe					\
-		    -Isrc/inc
+ASFLAGS          := -O0                      \
+                    -f elf64
+
+LDFLAGS_DEBUG    := -O$(OPT_DBG)             \
+                    -fno-pie
+
+LDFLAGS_RELEASE  := -O$(OPT_REL)             \
+                    -fno-pie
 
 
-CXXDEBUGFLAGS := -g					\
-				 -O0				\
-				 -m64				\
-		   		 -std=c++20			\
-		   		 -Weffc++			\
-		   		 -Wall				\
-		   		 -Wextra			\
-		   		 -pedantic-errors 	\
-		   		 -pipe				\
-		   		 -Isrc/inc
 
-ASMFLAGS := -O0						\
-		    -f elf64
 
-ASMDEBUGFLAGS := -O0				\
-		    	 -f	elf64			\
-		    	 -g					\
-				 -F dwarf
+# eval later:
+BUILD_OUTPUT_DIR :=
+CXXFLAGS         :=
+LDFLAGS          :=
 
-LDFLAGS := -O$(OPT)					\
-		   -m64						\
-		   -no-pie
 
-LDDEBUGFLAGS := -O0				 	\
-				-m64		 		\
-				-g			 		\
-		  		-no-pie
 
 
 # START:
-all : release
-	@echo "\nOutput: ./$(RELEASEDIR)/$(BIN)"
+all:
+	@printf "\nUsage:\n"
+	@printf "\nmake release : generate a release build\n"
+	@printf "\nmake debug   : generate a debug build\n"
 
 
-# build the application:
-release : dirs_release link
-	rm -rf $(shell find ./$(SRCDIR)/ -type f -name '*.o')
-	@echo "\nRELEASE: DONE!"
+# the main build routines:
+debug : dirs_debug setvars_debug compile_and_link
+	@printf "\nOUTPUT: $(BUILD_OUTPUT_DIR)/\n"
+	@printf "\nDEBUG: DONE!\n"
 
-# gen release build folder:
-dirs_release:
-	$(eval OUTDIR   = $(RELEASEDIR))
-	mkdir -p $(BUILDDIR)
-		mkdir -p $(RELEASEDIR)
+release : dirs_release setvars_release compile_and_link
+	@printf "\nOUTPUT: $(BUILD_OUTPUT_DIR)/\n"
+	@printf "\nRELEASE: DONE!\n"
 
-# gen debug build folder:
+
+# mkdirs:
 dirs_debug:
-	$(eval OUTDIR   = $(DEBUGDIR))
-	mkdir -p $(BUILDDIR)
-		mkdir -p $(DEBUGDIR)
+	@mkdir -p $(BUILDDIR)
+		@mkdir -p $(BUILDDIR_DEBUGDIR)
 
-# build the application:
-test  : debug
-debug : dirs_debug prep_debug link
-	@echo "\nDEBUG: DONE!"
-	@echo "\nOutput: ./$(DEBUGDIR)/$(BIN)"
+dirs_release:
+	@mkdir -p $(BUILDDIR)
+		@mkdir -p $(BUILDDIR_RELEASEDIR)
 
-prep_debug :
-	$(eval CFLAGS   = $(CDEBUGFLAGS))
-	$(eval CXXFLAGS = $(CXXDEBUGFLAGS))
-	$(eval LDFLAGS  = $(LDDEBUGFLAGS))
-	$(eval ASMFLAGS = $(ASMDEBUGFLAGS))
 
-# link the application:
-link : $(OBJ)
-	$(LINKER) $(LDFLAGS) $^ -o $(OUTDIR)/$(BIN)
+# set vars:
+setvars_debug:
+	$(eval CXXFLAGS = $(CXXFLAGS_DEBUG))
+	$(eval LDFLAGS  = $(LDFLAGS_DEBUG))
+	$(eval BUILD_OUTPUT_DIR = $(BUILDDIR_DEBUGDIR))
 
-# compile .c:
-%.o : %.c
-	$(COMPILER) $(CFLAGS) -c $< -o $@
+setvars_release:
+	$(eval CXXFLAGS = $(CXXFLAGS_RELEASE))
+	$(eval LDFLAGS  = $(LDFLAGS_RELEASE))
+	$(eval BUILD_OUTPUT_DIR = $(BUILDDIR_RELEASEDIR))
+
+
+# invoke compiling templates and link the bin:
+compile_and_link : $(OBJS)
+	@printf "LINK: "
+	$(LD) $(LDFLAGS) $^ -o $(BUILD_OUTPUT_DIR)/$(BIN)
+
 
 # compile .cpp:
 %.o : %.cpp
-	$(COMPILER) $(CXXFLAGS) -c $< -o $@
+	@printf "COMPILE: "
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # compile .asm:
 %.o : %.asm
-	$(COMPILER) $(ASMFLAGS) -c $< -o $@
+	@printf COMPILE: 
+	$(AS) $(ASFLAGS) $<
+
+
 
 
 # clean:
-clear : clean
 clean:
-	rm -rf $(BUILDDIR)
-	rm -rf $(shell find ./$(SRCDIR)/ -type f -name '*.o')
+	rm -rf $(BUILDDIR) $(shell find ./ -type f -name '*.o')
 
 
-# CI:
-ci : debug
-ci_clean : clean
 
 
-# run debug build:
-testrun: run
-testrun: run_debug
-run:
-	clear
-	@./$(DEBUGDIR)/$(BIN)
-
-# run release build:
-run_release:
-	clear
-	@./$(RELEASEDIR)/$(BIN)
-
-# run debug build under gdb:
-gdb :
-	clear
-	@gdb ./$(DEBUGDIR)/$(BIN)
+# TODO: Tests and CI
