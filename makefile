@@ -25,7 +25,7 @@ BUILDDIR_DEBUGDIR   := $(BUILDDIR)/debug
 
 
 # srcs:
-SRCDIR := ./src
+SRCDIR     := ./src
 SRC_CPP    := $(shell find $(SRCDIR)/ -type d \( -path ./tests \) -prune -false -o -name '*.cpp')
 SRC_ASM    := $(shell find $(SRCDIR)/ -type d \( -path ./tests \) -prune -false -o -name '*.asm')
 
@@ -86,12 +86,12 @@ all:
 
 # the main build routines:
 debug : dirs_debug setvars_debug compile_and_link
-	@printf "\nOUTPUT: $(BUILD_OUTPUT_DIR)/\n"
-	@printf "\nDEBUG: DONE!\n"
+	@printf "\nOUTPUT: ./$(BUILD_OUTPUT_DIR)/$(BIN)\n"
+	@printf "\nDEBUG: DONE!\n\n"
 
 release : dirs_release setvars_release compile_and_link
-	@printf "\nOUTPUT: $(BUILD_OUTPUT_DIR)/\n"
-	@printf "\nRELEASE: DONE!\n"
+	@printf "\nOUTPUT: ./$(BUILD_OUTPUT_DIR)/$(BIN)\n"
+	@printf "\nRELEASE: DONE!\n\n"
 
 
 # mkdirs:
@@ -129,7 +129,7 @@ compile_and_link : $(OBJS)
 
 # compile .asm:
 %.o : %.asm
-	@printf COMPILE: 
+	@printf "COMPILE: "
 	$(AS) $(ASFLAGS) $<
 
 
