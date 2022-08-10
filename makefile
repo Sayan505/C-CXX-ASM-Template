@@ -40,7 +40,7 @@ CXXFLAGS_DEBUG   := -O$(OPT_DBG)             \
                     -Wall                    \
                     -Wextra                  \
                     -Wpadded                 \
-					-pedantic                \
+		    -pedantic                \
                     -pedantic-errors         \
                     -pipe                    \
                     -g3                      \
@@ -51,7 +51,7 @@ CXXFLAGS_RELEASE := -O$(OPT_REL)             \
                     -std=c++20               \
                     -Wall                    \
                     -Wextra                  \
-					-pedantic                \
+		    -pedantic                \
                     -pedantic-errors         \
                     -pipe                    \
                     -fno-pic                 \
