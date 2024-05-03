@@ -40,7 +40,7 @@ CXXFLAGS_DEBUG   := -O$(OPT_DBG)             \
                     -Wall                    \
                     -Wextra                  \
                     -Wpadded                 \
-		    -pedantic                \
+                    -pedantic                \
                     -pedantic-errors         \
                     -pipe                    \
                     -g3                      \
@@ -51,7 +51,7 @@ CXXFLAGS_RELEASE := -O$(OPT_REL)             \
                     -std=c++20               \
                     -Wall                    \
                     -Wextra                  \
-		    -pedantic                \
+                    -pedantic                \
                     -pedantic-errors         \
                     -pipe                    \
                     -fno-pic                 \
@@ -69,7 +69,7 @@ LDFLAGS_RELEASE  := -O$(OPT_REL)             \
 
 
 
-# eval later:
+# eval later in setvars_* recipes:
 BUILD_OUTPUT_DIR :=
 CXXFLAGS         :=
 LDFLAGS          :=
@@ -142,4 +142,4 @@ clean:
 
 
 
-# TODO: Tests and CI
+# TODO: gtest + CI recipe and .a/.so lib support
